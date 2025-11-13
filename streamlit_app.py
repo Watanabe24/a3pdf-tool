@@ -7,7 +7,7 @@ from reportlab.lib.pagesizes import A3
 from reportlab.lib.utils import ImageReader
 from PIL import Image
 
-st.title("PDF → A3 変換ツール ")
+st.title("PDF → A3 変換ツール（セル線薄く・文字シャープ版）")
 
 uploaded_file = st.file_uploader("PDFを選択", type="pdf")
 output_name = st.text_input("出力ファイル名", "251213-25_冬イベントスケジュール.pdf")
@@ -20,10 +20,12 @@ if uploaded_file is not None:
     buffer_output = BytesIO()
     c = canvas.Canvas(buffer_output, pagesize=A3)
 
+    zoom = 3  # 3倍 → 約288dpiでシャープに
+    mat = fitz.Matrix(zoom, zoom)
+
     for page_index in range(pdf_doc.page_count):
         page = pdf_doc.load_page(page_index)
-        rect = page.rect  # ページ全体
-        pix = page.get_pixmap(clip=rect)
+        pix = page.get_pixmap(matrix=mat)  # 高解像度で画像化
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
         # 背景を白にして薄い線を消す
@@ -31,7 +33,7 @@ if uploaded_file is not None:
         bg.paste(img)
         img = bg
 
-        # 薄い線を白に置き換え
+        # 薄い線を白に置き換え（セル線をほぼ消す）
         threshold = 200  # 180～200で調整可能
         pixels = img.load()
         for y in range(img.height):
@@ -42,8 +44,8 @@ if uploaded_file is not None:
 
         # 縦横比を維持して少し余裕をもってA3に収める
         img_width_px, img_height_px = img.size
-        img_width_pt = img_width_px / 96 * 72
-        img_height_pt = img_height_px / 96 * 72
+        img_width_pt = img_width_px / (96 * zoom) * 72  # dpi換算
+        img_height_pt = img_height_px / (96 * zoom) * 72
         scale = min(a3_width / img_width_pt, a3_height / img_height_pt) * 0.95
         scaled_width = img_width_pt * scale
         scaled_height = img_height_pt * scale
