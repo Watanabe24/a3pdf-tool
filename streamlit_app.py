@@ -1,6 +1,6 @@
 # streamlit_app.py
 import streamlit as st
-from pdf2image import convert_from_path
+from pdf2image import convert_from_bytes
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A3
 from reportlab.lib.utils import ImageReader
@@ -20,11 +20,9 @@ uploaded_file = st.file_uploader("PDFを選択", type="pdf")
 output_name = st.text_input("出力ファイル名", "251213-25_冬イベントスケジュール.pdf")
 
 if uploaded_file is not None:
-    # PDFを画像に変換
-    if hasattr(uploaded_file, "name"):
-        pages = convert_from_path(uploaded_file, dpi=300)
-    else:
-        pages = convert_from_path(BytesIO(uploaded_file.read()), dpi=300)
+    uploaded_bytes = uploaded_file.read()
+    # convert_from_bytes を使用して Poppler 不要
+    pages = convert_from_bytes(uploaded_bytes, dpi=200)
 
     a3_width, a3_height = A3
     buffer_output = BytesIO()
@@ -40,7 +38,7 @@ if uploaded_file is not None:
             page_img = page_img.convert("RGB")
 
         img_width_px, img_height_px = page_img.size
-        dpi = 300
+        dpi = 200
         img_width_pt = img_width_px / dpi * 72
         img_height_pt = img_height_px / dpi * 72
 
