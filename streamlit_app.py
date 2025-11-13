@@ -7,7 +7,7 @@ from reportlab.lib.pagesizes import A3
 from reportlab.lib.utils import ImageReader
 from PIL import Image
 
-st.title("PDF → A3 変換ツール（セル線薄く・文字シャープ版）")
+st.title("PDF → A3 変換ツール")
 
 uploaded_file = st.file_uploader("PDFを選択", type="pdf")
 output_name = st.text_input("出力ファイル名", "251213-25_冬イベントスケジュール.pdf")
