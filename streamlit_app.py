@@ -1,3 +1,4 @@
+# streamlit_app.py
 import streamlit as st
 import fitz  # PyMuPDF
 from io import BytesIO
@@ -6,7 +7,7 @@ from reportlab.lib.pagesizes import A3
 from reportlab.lib.utils import ImageReader
 from PIL import Image
 
-st.title("PDF → A3 変換ツール (Poppler不要)")
+st.title("PDF → A3 変換ツール (余白・セル非表示版)")
 
 uploaded_file = st.file_uploader("PDFを選択", type="pdf")
 output_name = st.text_input("出力ファイル名", "251213-25_冬イベントスケジュール.pdf")
@@ -18,17 +19,23 @@ if uploaded_file is not None:
     a3_width, a3_height = A3
     buffer_output = BytesIO()
     c = canvas.Canvas(buffer_output, pagesize=A3)
-    
+
     for page_index in range(pdf_doc.page_count):
         page = pdf_doc.load_page(page_index)
-        pix = page.get_pixmap()  # 画像化
+        rect = page.rect  # ページ全体
+        pix = page.get_pixmap(clip=rect)  # 必要に応じてclipでトリミング
         img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
 
-        # 縦横比を維持してA3に収める
+        # 背景を白にしてセルを消す
+        bg = Image.new("RGB", img.size, (255, 255, 255))
+        bg.paste(img)
+        img = bg
+
+        # 縦横比を維持して少し余裕をもってA3に収める
         img_width_px, img_height_px = img.size
-        img_width_pt = img_width_px / 96 * 72  # PyMuPDF デフォルト 96 dpi
+        img_width_pt = img_width_px / 96 * 72
         img_height_pt = img_height_px / 96 * 72
-        scale = min(a3_width / img_width_pt, a3_height / img_height_pt)
+        scale = min(a3_width / img_width_pt, a3_height / img_height_pt) * 0.95  # 5%縮小
         scaled_width = img_width_pt * scale
         scaled_height = img_height_pt * scale
         x_offset = (a3_width - scaled_width) / 2
